@@ -8,6 +8,8 @@ import {HttpClientModule} from "@angular/common/http";
 
 import {SharedModule} from "./shared/shared.module";
 import {CoreModule} from "./core.module";
+import { StoreModule } from '@ngrx/store';
+import { reducers, metaReducers } from './reducers';
 
 @NgModule({
   declarations: [
@@ -20,6 +22,10 @@ import {CoreModule} from "./core.module";
     AppRoutingModule,
     SharedModule,
     CoreModule,
+    StoreModule.forRoot({}, {}),
+    StoreModule.forRoot(reducers, {
+      metaReducers
+    }),
   ],
   bootstrap: [AppComponent]
 })
