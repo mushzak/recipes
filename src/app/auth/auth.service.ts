@@ -1,10 +1,13 @@
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {catchError, tap} from "rxjs/operators";
-import {BehaviorSubject, Subject, throwError} from "rxjs";
-import {UserModel} from "./user.model";
-import {Router} from "@angular/router";
-import {environment} from "../../environments/environment";
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {catchError, tap} from 'rxjs/operators';
+import {BehaviorSubject, throwError} from 'rxjs';
+import {UserModel} from './user.model';
+import {Router} from '@angular/router';
+import {environment} from '../../environments/environment';
+import * as fromApp from '../store/app.reducer';
+import * as AuthActions from '../auth/store/auth.actions';
+import {Store} from '@ngrx/store';
 
 export interface AuthResponseData {
   kind: string;
@@ -19,10 +22,10 @@ export interface AuthResponseData {
   providedIn: 'root'
 })
 export class AuthService {
-  user = new BehaviorSubject<UserModel>(null)
+  user = new BehaviorSubject<UserModel>(null);
   private tokenExpirationTime: any;
 
-  constructor(private http: HttpClient, private router: Router) {
+  constructor(private http: HttpClient, private router: Router, private store: Store<fromApp.AppState>) {
   }
 
   signUp(email: string, password: string) {
@@ -43,10 +46,16 @@ export class AuthService {
     }));
   }
 
-  private authHandle(email: string, userId: string, token: string, expiresIn: number) {
+  private authHandle(
+    email: string,
+    userId: string,
+    token: string,
+    expiresIn: number
+  ) {
     const expirationDate = new Date(new Date().getTime() + +expiresIn * 1000);
     const user = new UserModel(email, userId, token, expirationDate);
-    this.user.next(user);
+    // this.user.next(user);
+    this.store.dispatch(new AuthActions.Login({email: email, userId: userId, token: token, expirationDate: expirationDate}))
     this.autoLogout(expiresIn * 1000);
     localStorage.setItem('userData', JSON.stringify(user));
   }
@@ -57,14 +66,14 @@ export class AuthService {
       return throwError(errorMessage);
     }
     switch (error.error.error.message) {
-      case("INVALID_PASSWORD"):
-        errorMessage = "Invalid Password!";
+      case('INVALID_PASSWORD'):
+        errorMessage = 'Invalid Password!';
         break;
-      case("EMAIL_EXISTS"):
-        errorMessage = "Email already exists!";
+      case('EMAIL_EXISTS'):
+        errorMessage = 'Email already exists!';
         break;
-      case("TOO_MANY_ATTEMPTS_TRY_LATER : Too many unsuccessful login attempts. Please try again later."):
-        errorMessage = "Too many unsuccessful login attempts. Please try again later.";
+      case('TOO_MANY_ATTEMPTS_TRY_LATER : Too many unsuccessful login attempts. Please try again later.'):
+        errorMessage = 'Too many unsuccessful login attempts. Please try again later.';
         break;
     }
     return throwError(errorMessage);
@@ -74,7 +83,7 @@ export class AuthService {
     this.user.next(null);
     this.router.navigate(['/auth']);
     localStorage.removeItem('userData');
-    if(this.tokenExpirationTime){
+    if (this.tokenExpirationTime) {
       clearTimeout(this.tokenExpirationTime);
     }
     this.tokenExpirationTime = null;
@@ -85,7 +94,7 @@ export class AuthService {
       email: string;
       id: string;
       _token: string;
-      _tokenExpirationDate: string;
+      _tokenExpirationDate: any;
     } = JSON.parse(localStorage.getItem('userData'));
     if (!userData) {
       return;
@@ -98,15 +107,21 @@ export class AuthService {
     );
 
     if (loadedUser.token) {
-      this.user.next(loadedUser);
+      // this.user.next(loadedUser);
+      this.store.dispatch(new AuthActions.Login({
+        email: loadedUser.email,
+        userId: loadedUser.id,
+        token: loadedUser.token,
+        expirationDate: userData._tokenExpirationDate
+      }));
       const expirationDuration = new Date(userData._tokenExpirationDate).getTime() - new Date().getTime();
       this.autoLogout(expirationDuration);
     }
   }
 
-  autoLogout(expirationDuration: number){
+  autoLogout(expirationDuration: number) {
     this.tokenExpirationTime = setTimeout(() => {
-        this.logout();
-      }, expirationDuration);
+      this.logout();
+    }, expirationDuration);
   }
 }
