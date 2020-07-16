@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ShoppingListService} from "./shopping-list/shopping-list.service";
 import {RecipesService} from "./recipes/services/recipes.service";
 import {DataStorageService} from "./shared/data-storage.service";
 import {AuthService} from "./auth/auth.service";
@@ -13,7 +12,6 @@ import {AuthInterceptorService} from "./auth/auth-interceptor.service";
     CommonModule
   ],
   providers: [
-    ShoppingListService,
     RecipesService,
     DataStorageService,
     AuthService,
