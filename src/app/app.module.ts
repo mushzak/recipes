@@ -12,6 +12,9 @@ import {SharedModule} from "./shared/shared.module";
 import {CoreModule} from "./core.module";
 import * as fromApp from "./store/app.reducer"
 import {AuthEffects} from "./auth/store/auth.effects";
+import {StoreDevtoolsModule} from "@ngrx/store-devtools";
+import {environment} from "../environments/environment";
+import { ServiceWorkerModule } from '@angular/service-worker';
 
 @NgModule({
   declarations: [
@@ -25,7 +28,9 @@ import {AuthEffects} from "./auth/store/auth.effects";
     StoreModule.forRoot(fromApp.appReducer),
     EffectsModule.forRoot([AuthEffects]),
     SharedModule,
-    CoreModule
+    CoreModule,
+    StoreDevtoolsModule.instrument({ logOnly: environment.production }),
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   bootstrap: [AppComponent]
 })
